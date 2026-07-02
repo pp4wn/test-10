@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Rice Field Monitor</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+<style>
+:root{
+    --surface-1:#ffffff;
+    --surface-2:#f7f7f7;
+    --text-primary:#222;
+    --text-secondary:#666;
+    --text-muted:#999;
+    --border:#ddd;
+    --border-strong:#bbb;
+
+    --bg-success:#dff6e3;
+    --text-success:#1b7d39;
+
+    --bg-danger:#ffe5e5;
+    --text-danger:#b10000;
+
+    --bg-accent:#dceeff;
+    --text-accent:#0066cc;
+
+    --radius:10px;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:#ececec;
+    padding:30px;
+}
+
+button{
+    background:#1e88e5;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1565c0;
+}
+</style>
+
+</head>
+<body>
+
+<div style="max-width:380px;margin:0 auto;background:var(--surface-1);border-radius:24px;padding:14px 14px 20px;">
+  <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;">Rice Field Monitor</h2>
+
+  <div style="display:flex;justify-content:center;margin-bottom:10px;">
+    <div style="width:60px;height:5px;border-radius:3px;background:var(--border-strong);"></div>
+  </div>
+
+  <div style="background:var(--surface-2);border-radius:16px;padding:1.25rem;">
+
+    <div style="padding:0.5rem 0 1rem;">
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 4px;">Welcome</p>
+      <h1 style="font-size:20px;font-weight:500;margin:0;color:var(--text-primary);">
+        Rice Field Monitor
+      </h1>
+    </div>
+
+    <div id="toast-slot" style="overflow:hidden;max-height:0;opacity:0;transition:0.25s;margin-bottom:0;">
+      <div id="toast" style="background:var(--bg-danger);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center;">
+        <i class="ti ti-bell-ringing" style="font-size:18px;color:var(--text-danger);"></i>
+
+        <div>
+          <p id="toast-title" style="font-weight:bold;color:var(--text-danger);">
+            Pest detected
+          </p>
+
+          <p id="toast-sub" style="font-size:12px;color:var(--text-danger);"></p>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="scan-card" style="background:white;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+
+      <div id="scan-dot-wrap" style="width:36px;height:36px;border-radius:50%;display:flex;justify-content:center;align-items:center;background:var(--bg-success);">
+        <i id="scan-icon" class="ti ti-player-play" style="color:var(--text-success);"></i>
+      </div>
+
+      <div style="flex:1;">
+        <p id="scan-title" style="font-weight:bold;">Ready</p>
+        <p id="scan-sub" style="font-size:12px;color:gray;">
+          Tap launch to patrol the rice field
+        </p>
+      </div>
+
+      <button id="scan-btn" onclick="launchScan()">
+        Launch
+      </button>
+
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+      <h3>Pest History</h3>
+      <span id="record-count">2 scans</span>
+    </div>
+
+    <div id="history-list"></div>
+
+  </div>
+
+</div>
+
+<script>
+
+var busy=false;
+var sessionCounter=2;
+var toastTimer=null;
+
+var plots=["A-1","A-2","A-3","B-1","B-2"];
+
+var sessions=[
+{
+id:2,
+start:"07:12 AM",
+end:"07:24 AM",
+date:"2026-07-01",
+expanded:false,
+detections:[
+{
+label:"Rice Hopper Detected",
+ts:"2026-07-01 07:15 AM",
+area:"Area A",
+plot:"A-3",
+count:4,
+species:"Rice Hopper",
+threat:"Critical (Spraying Activated)",
+action:"Automatic spraying activated",
+expanded:false
+}
+]
+},
+{
+id:1,
+start:"06:40 AM",
+end:"06:51 AM",
+date:"2026-06-30",
+expanded:false,
+detections:[]
+}
+];
+
+function showToast(title,sub){
+
+let slot=document.getElementById("toast-slot");
+
+document.getElementById("toast-title").innerHTML=title;
+document.getElementById("toast-sub").innerHTML=sub;
+
+slot.style.maxHeight="80px";
+slot.style.opacity="1";
+slot.style.marginBottom="15px";
+
+clearTimeout(toastTimer);
+
+toastTimer=setTimeout(function(){
+
+slot.style.maxHeight="0";
+slot.style.opacity="0";
+slot.style.marginBottom="0";
+
+},2200);
+
+}
+
+function launchScan(){
+
+if(busy)return;
+
+busy=true;
+
+document.getElementById("scan-title").innerHTML="Scanning...";
+document.getElementById("scan-sub").innerHTML="Checking rice plots...";
+document.getElementById("scan-btn").innerHTML="Scanning";
+
+setTimeout(function(){
+
+showToast("Rice Hopper Detected","Area A - Plot A-3");
+
+document.getElementById("scan-title").innerHTML="Scan Complete";
+document.getElementById("scan-sub").innerHTML="1 pest detected";
+document.getElementById("scan-btn").innerHTML="Launch";
+
+busy=false;
+
+},3000);
+
+}
+
+function renderHistory(){
+
+let list=document.getElementById("history-list");
+
+list.innerHTML="";
+
+document.getElementById("record-count").innerHTML=sessions.length+" scans";
+
+sessions.forEach(function(scan){
+
+let item=document.createElement("div");
+
+item.style.padding="10px";
+item.style.borderBottom="1px solid #ddd";
+
+item.innerHTML=`
+<strong>Pest Scan ${scan.id}</strong><br>
+<small>${scan.start} - ${scan.end}</small><br>
+${scan.detections.length>0
+?'<span style="color:red;">'+scan.detections.length+' Detection(s)</span>'
+:'<span style="color:green;">No Pests Found</span>'}
+`;
+
+list.appendChild(item);
+
+});
+
+}
+
+renderHistory();
+
+</script>
+
+</body>
+</html>
